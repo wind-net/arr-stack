@@ -15,10 +15,12 @@ Environment=PUID=1000
 Environment=PGID=1000
 Environment=TZ=UTC
 
-Volume=%h/arr-config/lidarr:/config:Z
-Volume=%h/arr-downloads/media/music:/music:z
-Volume=%h/arr-downloads:/downloads:z
-Volume=%h/arr-downloads/incomplete/tmp-lidarr:/tmp:Z
+Volume=/data/arr/config/lidarr:/config
+Volume=/data/arr/media/music:/music
+Volume=/data/arr/downloads:/downloads
+Volume=/data/arr/tmp/lidarr:/tmp
+
+Timezone=local
 
 AutoUpdate=registry
 

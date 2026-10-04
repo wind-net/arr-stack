@@ -13,6 +13,7 @@ PublishPort=443:443/udp
 Volume=/data/arr/config/caddy:/etc/caddy:ro,Z
 Volume=/data/arr/config/caddy/data:/data:Z
 AutoUpdate=registry
+Timezone=local
 
 [Service]
 Restart=always

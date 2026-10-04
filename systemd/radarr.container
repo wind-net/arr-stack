@@ -7,11 +7,15 @@ Image=ghcr.io/hotio/radarr:latest
 ContainerName=radarr
 Environment=PUID=0
 Environment=PGID=0
-Environment=TZ=Europe/Berlin
-Volume=/etc/localtime:/etc/localtime:ro
 Volume=/data/arr/config/radarr:/config:Z
-Volume=/data/arr/data:/data:z
+Volume=/data/arr/tmp/radarr:/tmp:Z
+Volume=/data/arr/downloads:/downloads:z
+Volume=/data/arr/media/movies:/movies:Z
+Timezone=local
+
 PublishPort=7878:7878
+CPUQuota=200%
+Memory=2G
 Network=arr
 
 AutoUpdate=registry

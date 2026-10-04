@@ -7,11 +7,15 @@ Image=ghcr.io/hotio/sonarr:latest
 ContainerName=sonarr
 Environment=PUID=0
 Environment=PGID=0
-Environment=TZ=(your timezone)
-Volume=/etc/localtime:/etc/localtime:ro
 Volume=/data/arr/config/sonarr:/config:Z
-Volume=/data/arr/data:/data:z
+Volume=/data/arr/tmp/sonarr:/tmp:Z
+Volume=/data/arr/downloads:/downloads:z
+Volume=/data/arr/media/tvshows:/tv:Z
+Timezone=local
+
 PublishPort=8989:8989
+CPUQuota=200%
+Memory=2G
 Network=arr
 
 AutoUpdate=registry

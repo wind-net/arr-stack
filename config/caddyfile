@@ -1,8 +1,35 @@
 media.example.com {
 	tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
 
-	@sonar path /sonar /sonar/*
-	reverse_proxy @sonar sonarr:8989
-    
+    @bazarr path /bazarr /bazarr/*
+	reverse_proxy @bazarr bazarr:6767
+
+	@lidarr path /lidarr /lidarr/*
+	reverse_proxy @lidarr lidarr:8686
+
+	@plex path /plex /plex/*
+	reverse_proxy @plex plex:32400
+
+	@prowlarr path /prowlarr /prowlarr/*
+	reverse_proxy @prowlarr prowlarr:9696
+
+	@qbittorrent path /qbittorrent /qbittorrent/*
+	reverse_proxy @qbittorrent qbittorrent:8080
+
+	@radarr path /radarr /radarr/*
+	reverse_proxy @radarr radarr:7878
+
+	@readarr path /readarr /readarr/*
+	reverse_proxy @readarr readarr:8787
+
+	@seerr path /seerr /seerr/*
+	reverse_proxy @seerr seerr:5055
+
+	@sonarr path /sonarr /sonarr/*
+	reverse_proxy @sonarr sonarr:8989
+
+	@root path /
+	rewrite @root /plex
+
 	respond 404
 }

@@ -7,12 +7,11 @@ Image=ghcr.io/hotio/bazarr:latest
 ContainerName=bazarr
 Environment=PUID=0
 Environment=PGID=0
-Environment=TZ=Europe/Berlin
-Volume=/etc/localtime:/etc/localtime:ro
 Volume=/data/arr/config/bazarr:/config:Z
 Volume=/data/arr/data:/data:z
 PublishPort=6767:6767
 Network=arr
+Timezone=local
 
 AutoUpdate=registry
 Label=io.containers.autoupdate=registry

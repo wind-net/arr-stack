@@ -7,10 +7,11 @@ Image=ghcr.io/hotio/prowlarr:latest
 ContainerName=prowlarr
 Environment=PUID=0
 Environment=PGID=0
-Environment=TZ=(your timezone)
-Volume=prowlarr_config:/config:Z
+Volume=/data/arr/config/prowlarr:/config:Z
+Volume=/data/arr/tmp/prowlarr:/tmp:Z
 PublishPort=9696:9696
 Network=arr
+Timezone=local
 
 AutoUpdate=registry
 Label=io.containers.autoupdate=registry
