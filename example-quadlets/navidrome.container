@@ -1,0 +1,32 @@
+[Unit]
+Description=Navidrome (Music Streaming)
+
+[Container]
+ContainerName=navidrome
+Image=docker.io/deluan/navidrome:latest
+Network=mynet.network
+
+# Resource limits
+PodmanArgs=--memory=512m --cpus=1
+
+Environment=TZ=UTC
+Environment=ND_MUSICFOLDER=/music
+Environment=ND_DATAFOLDER=/data
+Environment=ND_CACHEFOLDER=/tmp/navidrome-cache
+Environment=ND_ENABLETRANSCODINGCONFIG=true
+Environment=ND_ENABLETRANSCODINGCANCELLATION=true
+Environment=ND_DEFAULTDOWNSAMPLINGFORMAT=opus
+Environment=ND_TRANSCODINGCACHESIZE=2GiB
+
+Volume=%h/arr-config/navidrome:/data:Z
+Volume=%h/arr-downloads/media/music:/music:z
+Volume=%h/arr-downloads/incomplete/tmp-navidrome:/tmp:Z
+
+AutoUpdate=registry
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

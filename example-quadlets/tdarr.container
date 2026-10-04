@@ -1,0 +1,40 @@
+[Unit]
+Description=Tdarr (Transcode/Library Automation)
+
+[Container]
+ContainerName=tdarr
+Image=docker.io/haveagitgat/tdarr:latest
+Network=mynet.network
+
+# Intel Quick Sync (i7-8700 UHD 630)
+AddDevice=/dev/dri/renderD128
+AddDevice=/dev/dri/card0
+
+# Resource limits and security options
+PodmanArgs=--memory=4g --cpus=6 --userns=keep-id
+
+Environment=PUID=1000
+Environment=PGID=1000
+Environment=TZ=UTC
+Environment=serverIP=0.0.0.0
+Environment=serverPort=8266
+Environment=webUIPort=8265
+
+Volume=%h/arr-config/tdarr:/config:Z
+Volume=%h/arr-config/tdarr/server:/app/server:Z
+Volume=%h/arr-config/tdarr/configs:/app/configs:Z
+Volume=%h/arr-config/tdarr/logs:/app/logs:Z
+Volume=%h/arr-downloads/media:/data:z
+Volume=%h/arr-downloads/incomplete/tdarr-temp:/temp:Z
+
+LogDriver=journald
+
+AutoUpdate=registry
+
+[Service]
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

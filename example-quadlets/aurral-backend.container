@@ -1,0 +1,36 @@
+[Unit]
+Description=Aurral Backend (Artist Request Manager for Lidarr)
+Requires=lidarr.service
+After=lidarr.service
+
+[Container]
+ContainerName=aurral-backend
+Image=ghcr.io/lklynet/aurral-backend:latest
+Network=mynet.network
+
+# Resource limits
+PodmanArgs=--userns=keep-id --memory=512m --cpus=2
+
+# Lidarr API configuration
+Environment=LIDARR_URL=http://lidarr:8686
+Environment=LIDARR_API_KEY=1d69f7df53924e92a8e998a99568e81a
+Environment=PORT=3001
+Environment=CONTACT_EMAIL=jeffiscow@jeffiscow.xyz
+
+# Optional: Last.fm integration for better artist imagery
+Environment=LASTFM_API_KEY=
+
+# Optional: Basic auth protection (comma-separated for multiple passwords)
+Environment=AUTH_PASSWORD=
+
+# Persistent data directory
+Volume=%h/arr-config/aurral/backend:/app/data:Z
+
+AutoUpdate=registry
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

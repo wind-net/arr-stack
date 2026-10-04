@@ -1,0 +1,31 @@
+[Unit]
+Description=qBittorrent (routed via Gluetun)
+Requires=gluetun.service
+After=gluetun.service
+
+[Container]
+ContainerName=qbittorrent
+Image=lscr.io/linuxserver/qbittorrent:latest
+
+# Share Gluetun's network namespace so all traffic goes via VPN.
+Network=container:gluetun
+
+# Resource limits
+PodmanArgs=--userns=keep-id --memory=4g --cpus=4
+
+Environment=PUID=1000
+Environment=PGID=1000
+Environment=TZ=UTC
+Environment=WEBUI_PORT=8080
+
+Volume=%h/arr-config/qbittorrent:/config:Z
+Volume=%h/arr-downloads:/downloads:z
+
+AutoUpdate=registry
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

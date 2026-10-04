@@ -1,0 +1,24 @@
+[Unit]
+Description=Homarr (Dashboard)
+
+[Container]
+ContainerName=homarr
+Image=ghcr.io/homarr-labs/homarr:latest
+Network=mynet.network
+
+# Resource limits
+PodmanArgs=--memory=1g --cpus=2
+
+Environment=TZ=UTC
+Environment=SECRET_ENCRYPTION_KEY=30fc5237984723eaaac02cab36dc761e763f67ea845ccf074501779d65a6d537
+
+Volume=%h/arr-config/homarr:/appdata:Z
+
+AutoUpdate=registry
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

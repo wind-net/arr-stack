@@ -1,0 +1,27 @@
+[Unit]
+Description=Jellyfin (Media Server)
+
+[Container]
+ContainerName=jellyfin
+Image=docker.io/jellyfin/jellyfin:latest
+Network=mynet.network
+
+# Intel Quick Sync (i7-8700 UHD 630)
+AddDevice=/dev/dri/renderD128
+AddDevice=/dev/dri/card0
+
+# Resource limits
+PodmanArgs=--memory=4g --cpus=4 --group-add keep-groups
+
+Volume=%h/arr-config/jellyfin:/config:Z
+Volume=%h/arr-downloads/incomplete/jellyfin-cache:/cache:Z
+Volume=%h/arr-downloads/media:/media:z
+
+AutoUpdate=registry
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,24 @@
+[Unit]
+Description=Jellyseerr (Requests)
+
+[Container]
+ContainerName=jellyseerr
+Image=docker.io/fallenbagel/jellyseerr:latest
+Network=mynet.network
+
+# Resource limits
+PodmanArgs=--memory=512m --cpus=2
+
+Environment=TZ=UTC
+
+Volume=%h/arr-config/jellyseerr:/app/config:Z
+Volume=%h/arr-downloads/incomplete/tmp-jellyseerr:/tmp:Z
+
+AutoUpdate=registry
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

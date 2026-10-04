@@ -1,0 +1,27 @@
+[Unit]
+Description=Aurral Frontend (Artist Request Manager UI)
+Requires=aurral-backend.service
+After=aurral-backend.service
+
+[Container]
+ContainerName=aurral-frontend
+Image=ghcr.io/lklynet/aurral-frontend:latest
+Network=mynet.network
+
+# Resource limits
+PodmanArgs=--userns=keep-id --memory=256m --cpus=1
+
+# Frontend connects to backend
+Environment=VITE_API_URL=http://aurral-backend:3001
+
+# Persistent cache
+Volume=%h/arr-config/aurral/frontend:/app/.next/cache:Z
+
+AutoUpdate=registry
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

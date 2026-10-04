@@ -1,0 +1,32 @@
+[Unit]
+Description=Radarr (Movies)
+
+[Container]
+# Base options
+AutoUpdate=registry
+ContainerName=radarr
+Image=lscr.io/linuxserver/radarr:latest
+PodmanArgs=--userns=keep-id --memory=1g --cpus=4
+
+# Storage options
+Volume=%h/arr-config/radarr:/config:Z
+Volume=%h/arr-downloads/incomplete/tmp-radarr:/tmp:Z
+Volume=%h/arr-downloads:/downloads:z
+Volume=%h/arr-media/movies:/movies:Z
+
+# Network options
+Network=mynet.network
+
+# Environment options
+Environment=COMPlus_EnableDiagnostics=0
+Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
+Environment=PGID=1000
+Environment=PUID=1000
+Environment=TZ=UTC
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
