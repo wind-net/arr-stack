@@ -1,22 +1,22 @@
 [Unit]
 Description=Radarr Container Service
-After=network-online.target
+Requires=gluetun.service
+After=gluetun.service
 
 [Container]
 Image=ghcr.io/hotio/radarr:latest
 ContainerName=radarr
+Pod=arr.pod
 Environment=PUID=0
 Environment=PGID=0
 Volume=/data/arr/config/radarr:/config:Z
 Volume=/data/arr/tmp/radarr:/tmp:Z
 Volume=/data/arr/downloads:/downloads:z
-Volume=/data/arr/media/movies:/movies:Z
+Volume=/data/arr/media/movies:/movies:z
 Timezone=local
-
-PublishPort=7878:7878
-CPUQuota=200%
 Memory=2G
-Network=arr
+PodmanArgs=--cpus=2
+PidsLimit=200
 
 AutoUpdate=registry
 Label=io.containers.autoupdate=registry

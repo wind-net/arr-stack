@@ -1,0 +1,33 @@
+[Unit]
+Description=ARR Stack Pod (all services via VPN)
+After=network-online.target
+Wants=network-online.target
+
+[Pod]
+PodName=arr
+# All containers resolve DNS through gluetun's DNS-over-TLS
+DNS=127.0.0.1
+# Publish web UIs at pod level (rootless binds to 127.0.0.1)
+# radarr
+PublishPort=7878:7878
+# sonarr
+PublishPort=8989:8989
+# lidarr
+PublishPort=8686:8686
+# prowlarr
+PublishPort=9696:9696
+# bazarr
+PublishPort=6767:6767
+# seerr
+PublishPort=5055:5055
+# qbittorrent
+PublishPort=24953:24953
+# plex
+PublishPort=32400:32400
+
+[Service]
+Delegate=yes
+Restart=always
+
+[Install]
+WantedBy=default.target

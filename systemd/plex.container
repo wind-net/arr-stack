@@ -1,27 +1,28 @@
 [Unit]
 Description=Plex Media Server Container Service
-After=network-online.target
+Requires=gluetun.service
+After=gluetun.service
+BindsTo=gluetun.service
 
 [Container]
-Image=linuxserver/plex:latest
+Image=docker.io/plexinc/pms-docker:latest
 ContainerName=plex
-Environment=PUID=0
-Environment=PGID=0
+Pod=arr.pod
+Environment=PLEX_UID=1001
+Environment=PLEX_GID=1001
+Environment=PLEX_VERSION=docker
 Volume=/data/arr/config/plex:/config:Z
-Volume=data/arr/media/movies:/movies:Z
-Volume=/data/arr/media/kidsmovies:/kid-movies:Z
-Volume=/data/arr/media/tvshows:/tvshows:Z
-Volume=/data/arr/media/kidstv:/kidstv:Z
-Volume=/data/arr/media/music:/music:Z
+Volume=/data/arr/media/movies:/movies:z
+Volume=/data/arr/media/kidsmovies:/kid-movies:z
+Volume=/data/arr/media/tvshows:/tvshows:z
+Volume=/data/arr/media/kidstv:/kidstv:z
+Volume=/data/arr/media/music:/music:z
 Volume=/data/arr/tmp/plex-transcode:/transcode:Z
 Timezone=local
-
 AddDevice=/dev/dri
-
-PublishPort=32400:32400
-CPUQuota=200%
+PodmanArgs=--cpus=2
 Memory=4G
-Network=arr
+PidsLimit=200
 
 AutoUpdate=registry
 Label=io.containers.autoupdate=registry
@@ -29,7 +30,7 @@ Label=io.containers.autoupdate=registry
 HealthCmd=curl -f http://localhost:32400/web || exit 1
 
 [Service]
-Restart=always
+Restart=on-failure
 
 [Install]
 WantedBy=default.target

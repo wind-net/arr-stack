@@ -1,0 +1,309 @@
+---
+# Ansible playbook to prepare host for ARR Stack (rootless Podman quadlets)
+# Run: ansible-playbook -i inventory.yml setup-host.yml --ask-become-pass
+# Target: Rocky Linux / RHEL / Fedora
+
+- name: Prepare host for ARR Stack
+  hosts: all
+  become: true
+  vars:
+    arr_user: "arr"
+    arr_uid: 1000
+    arr_gid: 1000
+    data_root: "/data/arr"
+    # Firewall zones/services
+    firewall_allowed_ports:
+      - "80/tcp"
+      - "443/tcp"
+      - "443/udp"
+    # Certbot config (Cloudflare DNS challenge)
+    certbot_enabled: true
+    certbot_email: "admin@example.com"
+    certbot_domains:
+      - "media.wlankabel.ch"
+      - "plex.wlankabel.ch"
+      - "seerr.wlankabel.ch"
+    certbot_cert_name: "media.wlankabel.ch"
+    certbot_cloudflare_credentials: "/etc/letsencrypt/secrets/cloudflare.ini"
+    certbot_cloudflare_propagation_seconds: 20
+    # Sysctl
+    unprivileged_port_start: 0
+
+  pre_tasks:
+    - name: Install required packages (Rocky Linux / RHEL / Fedora)
+      dnf:
+        name:
+          - podman
+          - systemd
+          - firewalld
+          - python3-firewall
+          - certbot
+          - curl
+          - wget
+        state: present
+
+  tasks:
+    # ============================================================
+    # User & lingering
+    # ============================================================
+    - name: Create arr group
+      group:
+        name: "{{ arr_user }}"
+        gid: "{{ arr_gid }}"
+        state: present
+
+    - name: Create arr user
+      user:
+        name: "{{ arr_user }}"
+        uid: "{{ arr_uid }}"
+        group: "{{ arr_user }}"
+        groups: "video"
+        append: true
+        shell: /bin/bash
+        home: "/home/{{ arr_user }}"
+        create_home: true
+        state: present
+
+    - name: Enable lingering for arr user (systemd user services on boot)
+      command: "loginctl enable-linger {{ arr_user }}"
+      changed_when: false
+
+    # ============================================================
+    # Directory structure
+    # ============================================================
+    - name: Create data directory tree
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ arr_user }}"
+        group: "{{ arr_user }}"
+        mode: "0755"
+      loop:
+        - "{{ data_root }}"
+        - "{{ data_root }}/config"
+        - "{{ data_root }}/config/radarr"
+        - "{{ data_root }}/config/sonarr"
+        - "{{ data_root }}/config/lidarr"
+        - "{{ data_root }}/config/prowlarr"
+        - "{{ data_root }}/config/bazarr"
+        - "{{ data_root }}/config/seerr"
+        - "{{ data_root }}/config/plex"
+        - "{{ data_root }}/config/caddy"
+        - "{{ data_root }}/config/qbittorrent"
+        - "{{ data_root }}/config/gluetun"
+        - "{{ data_root }}/media"
+        - "{{ data_root }}/media/tv"
+        - "{{ data_root }}/media/movies"
+        - "{{ data_root }}/media/kidsmovies"
+        - "{{ data_root }}/media/kidstv"
+        - "{{ data_root }}/media/music"
+        - "{{ data_root }}/media/books"
+        - "{{ data_root }}/downloads"
+        - "{{ data_root }}/downloads/radarr"
+        - "{{ data_root }}/downloads/sonarr"
+        - "{{ data_root }}/downloads/lidarr"
+        - "{{ data_root }}/downloads/prowlarr"
+        - "{{ data_root }}/tmp"
+        - "{{ data_root }}/tmp/radarr"
+        - "{{ data_root }}/tmp/sonarr"
+        - "{{ data_root }}/tmp/lidarr"
+        - "{{ data_root }}/tmp/prowlarr"
+        - "{{ data_root }}/tmp/plex-transcode"
+
+    - name: Copy gluetun env file from config directory
+      copy:
+        src: "{{ playbook_dir }}/../config/gluetun.env"
+        dest: "{{ data_root }}/config/gluetun/gluetun.env"
+        owner: "{{ arr_user }}"
+        group: "{{ arr_user }}"
+        mode: "0600"
+      force: false
+
+    # ============================================================
+    # Sysctl: allow rootless binding to ports <1024
+    # ============================================================
+    - name: Configure unprivileged port start
+      sysctl:
+        name: net.ipv4.ip_unprivileged_port_start
+        value: "{{ unprivileged_port_start }}"
+        state: present
+        reload: true
+
+    # ============================================================
+    # Firewalld
+    # ============================================================
+    - name: Ensure firewalld is running
+      service:
+        name: firewalld
+        enabled: true
+        state: started
+
+    - name: Allow HTTP/HTTPS in public zone
+      firewalld:
+        port: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: enabled
+        zone: public
+      loop: "{{ firewall_allowed_ports }}"
+
+    - name: Allow podman internal traffic (optional, for pod networking)
+      firewalld:
+        zone: trusted
+        source: 10.88.0.0/16
+        permanent: true
+        immediate: true
+        state: enabled
+      # Only if you use podman's default CNI network range
+
+    # ============================================================
+    # Certbot (Let's Encrypt) - Cloudflare DNS challenge
+    # ============================================================
+    - name: Create Cloudflare credentials directory
+      file:
+        path: "{{ certbot_cloudflare_credentials | dirname }}"
+        state: directory
+        mode: "0700"
+      when: certbot_enabled
+      tags: certbot
+
+    - name: Create Cloudflare credentials placeholder
+      copy:
+        dest: "{{ certbot_cloudflare_credentials }}"
+        owner: "root"
+        group: "root"
+        mode: "0600"
+        content: |
+          # Cloudflare API credentials for certbot-dns-cloudflare
+          # Get your API token from: https://dash.cloudflare.com/profile/api-tokens
+          # Token needs: Zone.DNS.Read, Zone.DNS.Edit for your domain
+          dns_cloudflare_api_token = "REPLACE_WITH_YOUR_CLOUDFLARE_API_TOKEN"
+      force: false
+      when: certbot_enabled
+      tags: certbot
+
+    - name: Install certbot-dns-cloudflare plugin
+      dnf:
+        name: python3-certbot-dns-cloudflare
+        state: present
+      when: certbot_enabled
+      tags: certbot
+
+    - name: Request certificates (Cloudflare DNS challenge)
+      command: >
+        certbot certonly --dns-cloudflare
+        --dns-cloudflare-credentials {{ certbot_cloudflare_credentials }}
+        --dns-cloudflare-propagation-seconds {{ certbot_cloudflare_propagation_seconds }}
+        --cert-name {{ certbot_cert_name }}
+        {% for domain in certbot_domains %} -d {{ domain }} {% endfor %}
+        --register-unsafely-without-email --agree-tos --no-eff-email
+      register: certbot_result
+      changed_when: "'Congratulations' in certbot_result.stdout or 'Certificate not yet due' in certbot_result.stdout"
+      failed_when: certbot_result.rc != 0 and 'Certificate not yet due' not in certbot_result.stdout
+      when: certbot_enabled
+      tags: certbot
+
+    - name: Deploy certs to Caddy config directory
+      copy:
+        src: "/etc/letsencrypt/live/{{ certbot_cert_name }}/fullchain.pem"
+        dest: "{{ data_root }}/config/caddy/certs/fullchain.pem"
+        remote_src: true
+        owner: "{{ arr_user }}"
+        group: "{{ arr_user }}"
+        mode: "0644"
+      when: certbot_enabled
+      notify: Restart Caddy
+      tags: certbot
+
+    - name: Deploy private key to Caddy config directory
+      copy:
+        src: "/etc/letsencrypt/live/{{ certbot_cert_name }}/privkey.pem"
+        dest: "{{ data_root }}/config/caddy/certs/privkey.pem"
+        remote_src: true
+        owner: "{{ arr_user }}"
+        group: "{{ arr_user }}"
+        mode: "0600"
+      when: certbot_enabled
+      notify: Restart Caddy
+      tags: certbot
+
+    # ============================================================
+    # Podman quadlet directory
+    # ============================================================
+    - name: Create quadlet directory for arr user
+      file:
+        path: "/home/{{ arr_user }}/.config/containers/systemd"
+        state: directory
+        owner: "{{ arr_user }}"
+        group: "{{ arr_user }}"
+        mode: "0755"
+
+    - name: Copy quadlet files to arr user's systemd directory
+      copy:
+        src: "{{ playbook_dir }}/../systemd/"
+        dest: "/home/{{ arr_user }}/.config/containers/systemd/"
+        owner: "{{ arr_user }}"
+        group: "{{ arr_user }}"
+        mode: "0644"
+      # Run this after you've placed the quadlet files in the repo
+
+    - name: Copy Caddy config
+      copy:
+        src: "{{ playbook_dir }}/../config/caddyfile"
+        dest: "{{ data_root }}/config/caddy/caddyfile"
+        owner: "{{ arr_user }}"
+        group: "{{ arr_user }}"
+        mode: "0644"
+
+    # ============================================================
+    # Systemd: reload and enable services
+    # ============================================================
+    - name: Reload systemd user daemon for arr user
+      command: "systemctl --user daemon-reload"
+      become: true
+      become_user: "{{ arr_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ arr_uid }}"
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ arr_uid }}/bus"
+
+    - name: Start arr-pod and gluetun first
+      command: "systemctl --user start arr-pod.service gluetun.service"
+      become: true
+      become_user: "{{ arr_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ arr_uid }}"
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ arr_uid }}/bus"
+      ignore_errors: true
+      # May fail if gluetun.env not configured yet
+
+    - name: Enable all services for auto-start
+      command: "systemctl --user enable {{ item }}.service"
+      become: true
+      become_user: "{{ arr_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ arr_uid }}"
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ arr_uid }}/bus"
+      loop:
+        - arr-pod
+        - gluetun
+        - radarr
+        - sonarr
+        - lidarr
+        - prowlarr
+        - bazarr
+        - seerr
+        - qbittorrent
+        - plex
+        - caddy
+
+  handlers:
+    - name: Restart Caddy
+      command: "systemctl --user restart caddy.service"
+      become: true
+      become_user: "{{ arr_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ arr_uid }}"
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ arr_uid }}/bus"
+      listen: Restart Caddy
+
+...

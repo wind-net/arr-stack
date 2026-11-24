@@ -1,17 +1,20 @@
 [Unit]
 Description=Bazarr Container Service
-After=network-online.target
+Requires=gluetun.service
+After=gluetun.service
 
 [Container]
 Image=ghcr.io/hotio/bazarr:latest
 ContainerName=bazarr
+Pod=arr.pod
 Environment=PUID=0
 Environment=PGID=0
 Volume=/data/arr/config/bazarr:/config:Z
-Volume=/data/arr/data:/data:z
-PublishPort=6767:6767
-Network=arr
+Volume=/data/arr/media:/data:z
 Timezone=local
+Memory=512m
+PodmanArgs=--cpus=0.5
+PidsLimit=200
 
 AutoUpdate=registry
 Label=io.containers.autoupdate=registry

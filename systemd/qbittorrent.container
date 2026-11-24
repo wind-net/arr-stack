@@ -1,23 +1,29 @@
 [Unit]
 Description=Qbittorrent Container Service
+Requires=gluetun.service
+After=gluetun.service
+BindsTo=gluetun.service
 
 [Container]
 Image=lscr.io/linuxserver/qbittorrent:latest
 ContainerName=qbittorrent
+Pod=arr.pod
 Environment=PUID=0
 Environment=PGID=0
-Environment=WEBUI_PORT=8080
-Environment=TORRENTING_PORT=6881
+Environment=WEBUI_PORT=24953
+# Port forwarding is handled by gluetun (VPN_PORT_FORWARDING_UP_COMMAND there).
+# NOTE: qBittorrent API requires auth by default. Enable "Bypass authentication for localhost"
+# in qBittorrent Web UI → Options → Web UI → Authentication, or the port-forward command will get 403.
 Volume=/data/arr/config/qbittorrent:/config:Z
 Volume=/data/arr/downloads:/downloads:z
 Timezone=local
-
-Network=arr
+Memory=1g
+PodmanArgs=--cpus=0.5
+PidsLimit=200
 
 AutoUpdate=registry
-Label=io.containers.autoupdate=registry
 
-HealthCmd=curl -f http://localhost:8080 || exit 1
+HealthCmd=curl -f http://localhost:24953 || exit 1
 
 [Service]
 Restart=on-failure

@@ -1,28 +1,31 @@
 [Unit]
 Description=Lidarr (Music)
+Requires=gluetun.service
+After=gluetun.service
 
 [Container]
-ContainerName=lidarr
 Image=lscr.io/linuxserver/lidarr:latest
-Network=mynet.network
-
+ContainerName=lidarr
+Pod=arr.pod
 # Resource limits
-PodmanArgs=--userns=keep-id --memory=1g --cpus=4
-
+PodmanArgs=--userns=keep-id
+Memory=1g
+PodmanArgs=--cpus=4
 Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
 Environment=COMPlus_EnableDiagnostics=0
-Environment=PUID=1000
-Environment=PGID=1000
-Environment=TZ=UTC
-
-Volume=/data/arr/config/lidarr:/config
-Volume=/data/arr/media/music:/music
-Volume=/data/arr/downloads:/downloads
-Volume=/data/arr/tmp/lidarr:/tmp
-
+Environment=PUID=0
+Environment=PGID=0
+Volume=/data/arr/config/lidarr:/config:Z
+Volume=/data/arr/media/music:/music:z
+Volume=/data/arr/downloads:/downloads:z
+Volume=/data/arr/tmp/lidarr:/tmp:Z
 Timezone=local
+PidsLimit=200
 
 AutoUpdate=registry
+Label=io.containers.autoupdate=registry
+
+HealthCmd=curl -f http://localhost:8686 || exit 1
 
 [Service]
 Restart=on-failure

@@ -6,14 +6,21 @@ Wants=network-online.target
 [Container]
 Image=docker.io/library/caddy:2
 ContainerName=caddy
-Network=arr.network
-PublishPort=80:80
-PublishPort=443:443
-PublishPort=443:443/udp
+Environment=PUID=0
+Environment=PGID=0
+# Host network so it can bind 80/443 and reach 127.0.0.1:<pod ports>
+Network=host
 Volume=/data/arr/config/caddy:/etc/caddy:ro,Z
 Volume=/data/arr/config/caddy/data:/data:Z
-AutoUpdate=registry
 Timezone=local
+Memory=256m
+PodmanArgs=--cpus=0.5
+PidsLimit=200
+
+AutoUpdate=registry
+Label=io.containers.autoupdate=registry
+
+HealthCmd=wget -q -O /dev/null http://127.0.0.1:2019/config/ || exit 1
 
 [Service]
 Restart=always

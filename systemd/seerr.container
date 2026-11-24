@@ -1,25 +1,25 @@
 [Unit]
 Description=Seerr Container Service
-After=network-online.target
+Requires=gluetun.service
+After=gluetun.service
 
 [Container]
+User=0:0
 Image=ghcr.io/seerr-team/seerr:latest
 ContainerName=seerr
+Pod=arr.pod
 Environment=PUID=0
 Environment=PGID=0
-Volume=/etc/localtime:/etc/localtime:ro
-Volume=/data/arr/config/seerr:/config:Z
+Volume=/data/arr/config/seerr:/app/config:rw,Z
 Timezone=local
-
-PublishPort=5055:5055/tcp
-CPUQuota=200%
+PodmanArgs=--cpus=2
 Memory=1G
-Network=arr
+PidsLimit=200
 
 AutoUpdate=registry
 Label=io.containers.autoupdate=registry
 
-HealthCmd=curl -f http://localhost:8989 || exit 1
+HealthCmd=node -e "fetch('http://127.0.0.1:5055/api/v1/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 [Service]
 Restart=always

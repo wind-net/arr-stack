@@ -1,0 +1,33 @@
+---
+all:
+  hosts:
+    arr-host:
+      ansible_host: your.server.ip
+      ansible_user: root
+      # ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+  vars:
+    # Override any defaults from setup-host.yml here
+    arr_user: "arr"
+    arr_uid: 1001
+    arr_gid: 1001
+    data_root: "/data/arr"
+
+    # Certbot settings (Cloudflare DNS challenge)
+    certbot_enabled: true
+    certbot_email: "your@email.com"
+    certbot_domains:
+      - "media.wlankabel.ch"
+      - "plex.wlankabel.ch"
+      - "seerr.wlankabel.ch"
+    certbot_cert_name: "media.wlankabel.ch"
+    certbot_cloudflare_credentials: "/etc/letsencrypt/secrets/cloudflare.ini"
+    certbot_cloudflare_propagation_seconds: 20
+
+    # Firewall
+    firewall_allowed_ports:
+      - "80/tcp"
+      - "443/tcp"
+      - "443/udp"
+
+    # Sysctl
+    unprivileged_port_start: 0
